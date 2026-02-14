@@ -1,0 +1,38 @@
+{
+  "name": "worldbox-clone",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron-main.js",
+  "scripts": {
+    "dev": "vite",
+    "electron:dev": "NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "tsc && vite build",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.worldbox.clone",
+    "productName": "WorldBox Massive",
+    "win": {
+      "target": "portable",
+      "icon": "public/vite.svg"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-main.js",
+      "package.json"
+    ]
+  },
+  "dependencies": {
+    "pixi.js": "^8.16.0",
+    "simplex-noise": "^4.0.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "wait-on": "^8.0.2"
+  }
+}
