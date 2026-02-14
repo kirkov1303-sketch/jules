@@ -1,5 +1,5 @@
 import { Application, Graphics, RenderTexture, Sprite, Container, Texture } from 'pixi.js';
-import { TileData, BIOME_COLORS } from './types';
+import { TileData, BIOME_COLORS, ResourceType } from './types';
 
 export class WorldView extends Container {
     private worldSprite: Sprite;
@@ -21,9 +21,29 @@ export class WorldView extends Container {
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
                 const tile = this.grid[x][y];
-                const color = BIOME_COLORS[tile.biome];
+                const color = BIOME_COLORS[tile.biome] ?? 0xff00ff; // Magenta fallback
                 g.rect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                 g.fill(color);
+
+                if (tile.resource && tile.resource !== ResourceType.None && tile.resourceAmount > 0) {
+                    let rColor = 0x000000;
+                    switch (tile.resource) {
+                        case ResourceType.Wood: rColor = 0x5d4037; break;
+                        case ResourceType.Stone: rColor = 0x757575; break;
+                        case ResourceType.Ore: rColor = 0x455a64; break;
+                        case ResourceType.Gold: rColor = 0xffd700; break;
+                        case ResourceType.Berry: rColor = 0xd32f2f; break;
+                        case ResourceType.Crops: rColor = 0xfbc02d; break;
+                    }
+                    // Draw a small dot or square for resource
+                    const size = Math.min(this.tileSize - 2, 2 + (tile.resourceAmount / 10) * (this.tileSize - 4));
+                    g.rect(
+                        x * this.tileSize + (this.tileSize - size) / 2,
+                        y * this.tileSize + (this.tileSize - size) / 2,
+                        size, size
+                    );
+                    g.fill(rColor);
+                }
             }
         }
 

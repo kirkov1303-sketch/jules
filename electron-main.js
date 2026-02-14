@@ -11,8 +11,8 @@ function createWindow() {
     height: 1600,
     title: "WorldBox Clone - Massive Project",
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   });
 

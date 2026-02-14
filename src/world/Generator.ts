@@ -44,12 +44,14 @@ export class WorldGenerator {
                 // Special noise for unique biomes like mushroom or dead lands
                 const s = (this.noiseSpecial(nx * scale * 5, ny * scale * 5) + 1) / 2;
 
+                const biome = this.getBiome(h, m, t, s);
                 grid[x][y] = {
                     x, y,
                     height: h,
                     moisture: m,
                     temperature: t,
-                    biome: this.getBiome(h, m, t, s)
+                    biome: biome,
+                    resourceAmount: 0
                 };
             }
         }

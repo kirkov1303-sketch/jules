@@ -39,6 +39,9 @@ export class Toolbar {
             { type: 'SPAWN_DWARF', label: '🧔 Гном' },
             { type: 'METEOR', label: '☄️ Метеор' },
             { type: 'RAIN', label: '🌧️ Дождь' },
+            { type: 'LIGHTNING', label: '⚡ Молния' },
+            { type: 'BLESS', label: '✨ Благословение' },
+            { type: 'PLAGUE', label: '☣️ Чума' },
         ];
 
         powers.forEach(p => {

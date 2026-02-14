@@ -4,6 +4,10 @@ import { WorldView } from './world/WorldView';
 import { Toolbar } from './ui/Toolbar';
 import { BiomeType, Season } from './world/types';
 import { SeasonSystem } from './world/SeasonSystem';
+import { EnvironmentSystem } from './world/EnvironmentSystem';
+import { ResourceSpatialHash } from './world/ResourceSpatialHash';
+import { ParticleSystem } from './world/ParticleSystem';
+import { WeatherSystem } from './world/WeatherSystem';
 import { ECSWorld } from './ecs';
 import { movementSystem } from './ecs/MovementSystem';
 import { RenderSystem } from './ecs/RenderSystem';
@@ -11,6 +15,10 @@ import { aiSystem } from './ecs/AISystem';
 import { combatSystem } from './ecs/CombatSystem';
 
 (async () => {
+    window.onerror = (msg, url, line, col, error) => {
+        console.log(`ERROR: ${msg} at ${line}:${col}. Stack: ${error?.stack}`);
+    };
+
     const app = new Application();
 
     await app.init({
@@ -39,6 +47,13 @@ import { combatSystem } from './ecs/CombatSystem';
 
     const renderSystem = new RenderSystem(worldContainer);
     const seasonSystem = new SeasonSystem();
+    const envSystem = new EnvironmentSystem(grid);
+    const resourceHash = new ResourceSpatialHash(128);
+    resourceHash.update(grid);
+    const particles = new ParticleSystem();
+    worldContainer.addChild(particles);
+    const weather = new WeatherSystem(gridWidth * worldView.tileSize, gridHeight * worldView.tileSize);
+    worldContainer.addChild(weather);
 
     // --- Visual Effects ---
     const worldFilter = new ColorMatrixFilter();
@@ -99,6 +114,7 @@ import { combatSystem } from './ecs/CombatSystem';
         if (currentPower === 'METEOR') {
             if (isContinuous) return;
             const radius = 10;
+            particles.emit(localPos.x, localPos.y, 0xffaa00, 50);
             // Kill entities
             const entities = ecs.query(['position']);
             for (const entity of entities) {
@@ -110,11 +126,26 @@ import { combatSystem } from './ecs/CombatSystem';
             applyBrush(tx, ty, radius, BiomeType.Volcanic);
         } else if (currentPower === 'RAIN') {
             applyBrush(tx, ty, 6, BiomeType.Plains); // Makes things green
+        } else if (currentPower === 'LIGHTNING') {
+            if (isContinuous) return;
+            strikeLightning(localPos.x, localPos.y);
+        } else if (currentPower === 'BLESS') {
+            applyEffectToUnits(localPos.x, localPos.y, 50, (u) => {
+                u.maxHealth += 50;
+                u.health = u.maxHealth;
+                u.traits.push('Blessed');
+            });
+        } else if (currentPower === 'PLAGUE') {
+            applyEffectToUnits(localPos.x, localPos.y, 30, (u) => {
+                u.traits.push('Infected');
+            });
         } else if (typeof currentPower === 'string' && currentPower.startsWith('SPAWN')) {
             if (isContinuous) return;
             spawnUnit(currentPower, localPos.x, localPos.y);
         } else if (tx >= 0 && tx < gridWidth && ty >= 0 && ty < gridHeight) {
-            applyBrush(tx, ty, 5, currentPower as BiomeType);
+            if (Object.values(BiomeType).includes(currentPower as BiomeType)) {
+                applyBrush(tx, ty, 5, currentPower as BiomeType);
+            }
         }
     }
 
@@ -146,6 +177,32 @@ import { combatSystem } from './ecs/CombatSystem';
             color: color,
             size: 3
         });
+    }
+
+    function strikeLightning(x: number, y: number) {
+        const radius = 20;
+        particles.emit(x, y, 0xaaaaff, 30);
+        const entities = ecs.query(['position', 'unit']);
+        for (const e of entities) {
+            const pos = ecs.getComponent<any>(e, 'position');
+            const d = Math.sqrt((pos.x - x)**2 + (pos.y - y)**2);
+            if (d < radius) {
+                const u = ecs.getComponent<any>(e, 'unit');
+                u.health -= 80;
+                if (u.health <= 0) ecs.removeEntity(e);
+            }
+        }
+    }
+
+    function applyEffectToUnits(x: number, y: number, radius: number, callback: (unit: any) => void) {
+        const entities = ecs.query(['position', 'unit']);
+        for (const e of entities) {
+            const pos = ecs.getComponent<any>(e, 'position');
+            const d = Math.sqrt((pos.x - x)**2 + (pos.y - y)**2);
+            if (d < radius) {
+                callback(ecs.getComponent<any>(e, 'unit'));
+            }
+        }
     }
 
     function applyBrush(tx: number, ty: number, radius: number, type: BiomeType) {
@@ -181,14 +238,22 @@ import { combatSystem } from './ecs/CombatSystem';
         const currentSeason = seasonSystem.update(time);
         seasonSystem.applySeasonFilter(worldFilter, currentSeason);
 
+        envSystem.update(delta);
+        if (Math.floor(time) % 5 === 0 && Math.floor(time) !== Math.floor(time - delta)) {
+            worldView.renderWorld(); // Refresh map visuals for resources periodically
+            resourceHash.update(grid);
+        }
+
         const cycle = (Math.sin(time * 0.1) + 1) / 2;
         dayNightFilter.brightness(0.3 + 0.7 * cycle, false);
         dayNightFilter.night(1.0 - (0.4 + 0.6 * cycle), false);
 
-        aiSystem(ecs, delta);
-        combatSystem(ecs, delta);
+        aiSystem(ecs, grid, resourceHash, delta);
+        combatSystem(ecs, delta, (x, y) => particles.emit(x, y, 0xff0000, 3));
         movementSystem(ecs, delta);
         renderSystem.update(ecs);
+        particles.update(delta);
+        weather.update(delta, currentSeason);
 
         const units = ecs.query(['unit']).length;
         const buildings = ecs.query(['building']).length;

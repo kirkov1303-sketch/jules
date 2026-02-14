@@ -38,7 +38,7 @@ export interface VillageData {
 }
 
 export interface Task {
-    type: 'IDLE' | 'GATHER' | 'BUILD' | 'WANDER';
+    type: 'IDLE' | 'GATHER' | 'BUILD' | 'WANDER' | 'FIGHT';
     targetX: number;
     targetY: number;
     timer: number;

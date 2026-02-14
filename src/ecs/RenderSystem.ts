@@ -17,7 +17,7 @@ export class RenderSystem {
             const render = world.getComponent<any>(entity, 'renderable');
             if (pos && render) {
                 this.graphics.circle(pos.x, pos.y, render.size);
-                this.graphics.fill(render.color);
+                this.graphics.fill(render.color ?? 0xffffff);
             }
         }
     }

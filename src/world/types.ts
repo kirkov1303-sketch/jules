@@ -26,6 +26,16 @@ export enum Season {
     Winter = 'Winter'
 }
 
+export enum ResourceType {
+    None = 'None',
+    Wood = 'Wood',
+    Stone = 'Stone',
+    Ore = 'Ore',
+    Gold = 'Gold',
+    Berry = 'Berry',
+    Crops = 'Crops'
+}
+
 export interface TileData {
     x: number;
     y: number;
@@ -33,6 +43,8 @@ export interface TileData {
     moisture: number;
     temperature: number;
     biome: BiomeType;
+    resource?: ResourceType;
+    resourceAmount: number;
 }
 
 export const BIOME_COLORS: Record<BiomeType, number> = {
