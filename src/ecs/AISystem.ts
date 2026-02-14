@@ -7,10 +7,21 @@ export function aiSystem(world: ECSWorld, delta: number) {
         const pos = world.getComponent<any>(entity, 'position');
         const task = world.getComponent<any>(entity, 'task');
         const vel = world.getComponent<any>(entity, 'velocity');
+        const unit = world.getComponent<any>(entity, 'unit');
 
-        if (!pos || !task || !vel) continue;
+        if (!pos || !task || !vel || !unit) continue;
 
         task.timer -= delta;
+
+        // Vital stats
+        unit.hunger += delta * 2;
+        if (unit.hunger > 100) {
+            unit.health -= delta * 5;
+            if (unit.health <= 0) {
+                world.removeEntity(entity);
+                continue;
+            }
+        }
 
         if (task.timer <= 0) {
             // State transitions
@@ -56,5 +67,13 @@ function createBuilding(world: ECSWorld, x: number, y: number) {
     const b = world.createEntity();
     world.addComponent(b, 'position', { x, y });
     world.addComponent(b, 'renderable', { color: 0xaa8844, size: 8 });
+    world.addComponent(b, 'villageData', {
+        id: Math.floor(Math.random() * 1000),
+        race: 'Unknown',
+        resources: { wood: 0, stone: 0, food: 0 },
+        level: 1,
+        population: 1,
+        culture: 'Default'
+    });
     world.addComponent(b, 'building', { level: 1 });
 }

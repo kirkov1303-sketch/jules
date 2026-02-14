@@ -2,7 +2,8 @@ import { Application, Text, TextStyle, Container, ColorMatrixFilter } from 'pixi
 import { WorldGenerator } from './world/Generator';
 import { WorldView } from './world/WorldView';
 import { Toolbar } from './ui/Toolbar';
-import { BiomeType } from './world/types';
+import { BiomeType, Season } from './world/types';
+import { SeasonSystem } from './world/SeasonSystem';
 import { ECSWorld } from './ecs';
 import { movementSystem } from './ecs/MovementSystem';
 import { RenderSystem } from './ecs/RenderSystem';
@@ -37,10 +38,12 @@ import { combatSystem } from './ecs/CombatSystem';
     app.stage.addChild(worldContainer);
 
     const renderSystem = new RenderSystem(worldContainer);
+    const seasonSystem = new SeasonSystem();
 
     // --- Visual Effects ---
     const worldFilter = new ColorMatrixFilter();
-    worldContainer.filters = [worldFilter];
+    const dayNightFilter = new ColorMatrixFilter();
+    worldContainer.filters = [worldFilter, dayNightFilter];
     let time = 0;
 
     worldContainer.x = (app.screen.width - gridWidth * worldView.tileSize) / 2;
@@ -109,23 +112,40 @@ import { combatSystem } from './ecs/CombatSystem';
             applyBrush(tx, ty, 6, BiomeType.Plains); // Makes things green
         } else if (typeof currentPower === 'string' && currentPower.startsWith('SPAWN')) {
             if (isContinuous) return;
-            const entity = ecs.createEntity();
-            ecs.addComponent(entity, 'position', { x: localPos.x, y: localPos.y });
-            ecs.addComponent(entity, 'velocity', { vx: 0, vy: 0 });
-            ecs.addComponent(entity, 'unit', {
-                race: currentPower === 'SPAWN_HUMAN' ? 'Human' : 'Orc',
-                health: 100, age: 0, traits: []
-            });
-            ecs.addComponent(entity, 'task', {
-                type: 'WANDER', targetX: localPos.x, targetY: localPos.y, timer: 1
-            });
-            ecs.addComponent(entity, 'renderable', {
-                color: currentPower === 'SPAWN_HUMAN' ? 0xffffff : 0x55ff55,
-                size: 3
-            });
+            spawnUnit(currentPower, localPos.x, localPos.y);
         } else if (tx >= 0 && tx < gridWidth && ty >= 0 && ty < gridHeight) {
             applyBrush(tx, ty, 5, currentPower as BiomeType);
         }
+    }
+
+    function spawnUnit(type: string, x: number, y: number) {
+        const entity = ecs.createEntity();
+        ecs.addComponent(entity, 'position', { x, y });
+        ecs.addComponent(entity, 'velocity', { vx: 0, vy: 0 });
+
+        let race = 'Human';
+        let color = 0xffffff;
+        let traits: string[] = [];
+
+        if (type === 'SPAWN_HUMAN') { race = 'Human'; color = 0xffffff; }
+        if (type === 'SPAWN_ORC') { race = 'Orc'; color = 0x55ff55; traits.push('Strong'); }
+        if (type === 'SPAWN_ELF') { race = 'Elf'; color = 0x55ffff; traits.push('Agile'); }
+        if (type === 'SPAWN_DWARF') { race = 'Dwarf'; color = 0xffaa55; traits.push('Tough'); }
+
+        ecs.addComponent(entity, 'unit', {
+            race,
+            health: 100, maxHealth: 100,
+            age: 0,
+            traits,
+            hunger: 0, energy: 100, mood: 100
+        });
+        ecs.addComponent(entity, 'task', {
+            type: 'WANDER', targetX: x, targetY: y, timer: 1
+        });
+        ecs.addComponent(entity, 'renderable', {
+            color: color,
+            size: 3
+        });
     }
 
     function applyBrush(tx: number, ty: number, radius: number, type: BiomeType) {
@@ -157,10 +177,13 @@ import { combatSystem } from './ecs/CombatSystem';
         const delta = ticker.deltaTime / 60;
         time += delta;
 
-        // Day/Night Cycle
+        // Seasons & Day/Night Cycle
+        const currentSeason = seasonSystem.update(time);
+        seasonSystem.applySeasonFilter(worldFilter, currentSeason);
+
         const cycle = (Math.sin(time * 0.1) + 1) / 2;
-        worldFilter.brightness(0.3 + 0.7 * cycle, false);
-        worldFilter.night(1.0 - cycle, false);
+        dayNightFilter.brightness(0.3 + 0.7 * cycle, false);
+        dayNightFilter.night(1.0 - (0.4 + 0.6 * cycle), false);
 
         aiSystem(ecs, delta);
         combatSystem(ecs, delta);
@@ -169,6 +192,7 @@ import { combatSystem } from './ecs/CombatSystem';
 
         const units = ecs.query(['unit']).length;
         const buildings = ecs.query(['building']).length;
-        infoText.text = `Юниты: ${units} | Здания: ${buildings} | День: ${Math.floor(time/10)}`;
+        const seasonName = seasonSystem.getSeasonRussianName(currentSeason);
+        infoText.text = `Юниты: ${units} | Здания: ${buildings} | День: ${Math.floor(time/10)} | Сезон: ${seasonName}`;
     });
 })();

@@ -11,8 +11,16 @@ export interface Velocity {
 export interface Unit {
     race: string;
     health: number;
+    maxHealth: number;
     age: number;
     traits: string[];
+    hunger: number;
+    energy: number;
+    mood: number;
+}
+
+export interface Inventory {
+    resources: Record<string, number>;
 }
 
 export interface Renderable {
@@ -23,8 +31,10 @@ export interface Renderable {
 export interface VillageData {
     id: number;
     race: string;
-    resources: number;
+    resources: Record<string, number>;
     level: number;
+    population: number;
+    culture: string;
 }
 
 export interface Task {

@@ -35,6 +35,8 @@ export class Toolbar {
             { type: BiomeType.Swamp, label: '🐊 Болото' },
             { type: 'SPAWN_HUMAN', label: '🚶 Человек' },
             { type: 'SPAWN_ORC', label: '👹 Орк' },
+            { type: 'SPAWN_ELF', label: '🧝 Эльф' },
+            { type: 'SPAWN_DWARF', label: '🧔 Гном' },
             { type: 'METEOR', label: '☄️ Метеор' },
             { type: 'RAIN', label: '🌧️ Дождь' },
         ];

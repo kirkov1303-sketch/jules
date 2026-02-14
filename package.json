@@ -14,8 +14,13 @@
     "appId": "com.worldbox.clone",
     "productName": "WorldBox Massive",
     "win": {
-      "target": "portable",
-      "icon": "public/vite.svg"
+      "target": [
+        "portable"
+      ],
+      "icon": null
+    },
+    "directories": {
+      "output": "dist_electron"
     },
     "files": [
       "dist/**/*",

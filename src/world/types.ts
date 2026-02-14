@@ -19,6 +19,13 @@ export enum BiomeType {
     SnowyMountain = 'SnowyMountain'
 }
 
+export enum Season {
+    Spring = 'Spring',
+    Summer = 'Summer',
+    Autumn = 'Autumn',
+    Winter = 'Winter'
+}
+
 export interface TileData {
     x: number;
     y: number;
