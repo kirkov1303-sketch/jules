@@ -11,6 +11,8 @@ var is_circle_brush = true
 
 var world_manager: Node
 
+const WORLD_SIZE = 4096 # Local constant to avoid dependency on WorldManager class during parse
+
 func _init(_world_manager: Node):
 	world_manager = _world_manager
 
@@ -41,7 +43,7 @@ func apply_rect_brush(center: Vector2i):
 			execute_power_at(Vector2i(x, y))
 
 func execute_power_at(pos: Vector2i):
-	if pos.x < 0 or pos.y < 0 or pos.x >= WorldManager.WORLD_SIZE or pos.y >= WorldManager.WORLD_SIZE:
+	if pos.x < 0 or pos.y < 0 or pos.x >= WORLD_SIZE or pos.y >= WORLD_SIZE:
 		return
 
 	match current_power:
@@ -51,8 +53,8 @@ func execute_power_at(pos: Vector2i):
 		"fire": apply_fire(pos)
 		"nuke": apply_nuke(pos)
 		"lightning": apply_lightning(pos)
-		"set_grass": world_manager.set_tile(pos.x, pos.y, WorldManager.Biome.PLAINS)
-		"set_sand": world_manager.set_tile(pos.x, pos.y, WorldManager.Biome.DESERT)
+		"set_grass": world_manager.set_tile(pos.x, pos.y, 3) # Use int values to avoid enum dependency
+		"set_sand": world_manager.set_tile(pos.x, pos.y, 7)
 		"heal": apply_heal(pos)
 		"bless": apply_trait(pos, "blessed")
 		"spawn_wolf": spawn_unit(pos, "wolf")
@@ -81,17 +83,17 @@ func spawn_unit(pos: Vector2i, race: String):
 
 func apply_rain(pos: Vector2i):
 	var biome = world_manager.get_tile_biome(pos)
-	if biome == WorldManager.Biome.DESERT:
-		world_manager.set_tile(pos.x, pos.y, WorldManager.Biome.PLAINS)
-	elif biome == WorldManager.Biome.WASTELAND:
-		world_manager.set_tile(pos.x, pos.y, WorldManager.Biome.PLAINS)
+	if biome == 7: # DESERT
+		world_manager.set_tile(pos.x, pos.y, 3) # PLAINS
+	elif biome == 14: # WASTELAND
+		world_manager.set_tile(pos.x, pos.y, 3) # PLAINS
 
 func apply_fire(pos: Vector2i):
 	# Start fire simulation at this tile
 	world_manager.start_fire(pos)
 
 func apply_nuke(pos: Vector2i):
-	world_manager.set_tile(pos.x, pos.y, WorldManager.Biome.WASTELAND)
+	world_manager.set_tile(pos.x, pos.y, 14) # WASTELAND
 	# Kill units in area using spatial hash
 	var world_pos = world_manager.tile_map.map_to_local(pos)
 	var affected_units = world_manager.get_units_in_range(world_pos, 50)

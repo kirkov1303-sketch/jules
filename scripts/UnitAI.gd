@@ -4,12 +4,12 @@ class_name UnitAI
 
 enum State { IDLE, WANDER, SEEK_FOOD, SEEK_SHELTER, WORK, FIGHT, REPRODUCE }
 
-var unit: CharacterBody2D
+var unit: Node # Use Node to avoid circularity and strict property checks
 var current_state = State.WANDER
 var target_pos = Vector2.ZERO
 var state_timer = 0.0
 
-func _init(_unit: CharacterBody2D):
+func _init(_unit: Node):
 	unit = _unit
 
 func update(delta: float):

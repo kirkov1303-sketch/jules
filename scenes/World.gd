@@ -1,10 +1,10 @@
 extends Node2D
 
-var world_manager: WorldManager
-var power_system: PowerSystem
-var network_manager: NetworkManager
+var world_manager: Node
+var power_system: Node
+var network_manager: Node
 var speed_scale = 1.0
-var possessed_unit: Unit = null
+var possessed_unit: Node = null
 
 @onready var tile_map = $TileMap
 @onready var camera = $Camera2D

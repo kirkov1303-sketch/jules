@@ -164,10 +164,10 @@ func set_tile(x, y, biome):
 	# 0 is the layer, source_id is 0, atlas_coords depends on biome
 	tile_map.set_cell(0, Vector2i(x, y), 0, Vector2i(biome, 0))
 
-func get_tile_biome(pos: Vector2i) -> Biome:
+func get_tile_biome(pos: Vector2i) -> int:
 	if pos.x < 0 or pos.y < 0 or pos.x >= WORLD_SIZE or pos.y >= WORLD_SIZE: return Biome.VOID
 	var data = tile_map.get_cell_atlas_coords(0, pos)
-	return data.x as Biome
+	return int(data.x)
 
 func start_fire(pos: Vector2i):
 	# Fire spreading logic
