@@ -1,0 +1,95 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/World.gd" id="1_world"]
+[ext_resource type="TileSet" uid="uid://c8n4y8x3x7r8j" path="res://scenes/tileset.tres" id="2_tileset"]
+
+[node name="World" type="Node2D"]
+script = ExtResource("1_world")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = ExtResource("2_tileset")
+format = 2
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(960, 540)
+current = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="PowerPanel" type="Panel" parent="UI"]
+offset_top = 880.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="Tabs" type="TabContainer" parent="UI/PowerPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Creation" type="HFlowContainer" parent="UI/PowerPanel/Tabs"]
+layout_mode = 2
+
+[node name="SpawnHuman" type="Button" parent="UI/PowerPanel/Tabs/Creation"]
+layout_mode = 2
+text = "Human"
+
+[node name="SpawnOrc" type="Button" parent="UI/PowerPanel/Tabs/Creation"]
+layout_mode = 2
+text = "Orc"
+
+[node name="Nature" type="HFlowContainer" parent="UI/PowerPanel/Tabs"]
+visible = false
+layout_mode = 2
+
+[node name="Rain" type="Button" parent="UI/PowerPanel/Tabs/Nature"]
+layout_mode = 2
+text = "Rain"
+
+[node name="Destruction" type="HFlowContainer" parent="UI/PowerPanel/Tabs"]
+visible = false
+layout_mode = 2
+
+[node name="Nuke" type="Button" parent="UI/PowerPanel/Tabs/Destruction"]
+layout_mode = 2
+text = "Nuke"
+
+[node name="Creatures" type="Control" parent="UI/PowerPanel/Tabs"]
+layout_mode = 2
+
+[node name="Magic" type="Control" parent="UI/PowerPanel/Tabs"]
+layout_mode = 2
+
+[node name="SpeedSlider" type="HSlider" parent="UI"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 220.0
+offset_bottom = 36.0
+min_value = 1.0
+max_value = 100.0
+value = 1.0
+
+[node name="Minimap" type="SubViewportContainer" parent="UI"]
+offset_left = 1680.0
+offset_top = 20.0
+offset_right = 1880.0
+offset_bottom = 220.0
+
+[node name="SubViewport" type="SubViewport" parent="UI/Minimap"]
+handle_input_locally = false
+size = Vector2i(200, 200)
+render_target_update_mode = 4
+
+[node name="MinimapCamera" type="Camera2D" parent="UI/Minimap/SubViewport"]
+zoom = Vector2(0.1, 0.1)
+
+[node name="PopulationGraph" type="Line2D" parent="UI"]
+points = PackedVector2Array(0, 0, 100, 0)
+width = 2.0
+default_color = Color(0, 1, 0, 1)
+
+[node name="MusicPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="SFXPlayer" type="AudioStreamPlayer" parent="."]
