@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-# class_name Unit (Using preload to avoid circularity issues)
+# class_name Unit (Using load dynamically to avoid circularity issues)
 
 @export var race = "human"
 @export var speed = 50.0
@@ -15,11 +15,13 @@ var ai
 var is_possessed = false
 
 func _ready():
-	ai = preload("res://scripts/UnitAI.gd").new(self)
-	ai.apply_genetics()
+	ai = load("res://scripts/UnitAI.gd").new(self)
+	if ai.has_method("apply_genetics"):
+		ai.apply_genetics()
 
 func _process(delta):
-	ai.update(delta)
+	if ai:
+		ai.update(delta)
 
 	# Aging and Hunger
 	age += delta * 0.01
@@ -45,9 +47,8 @@ func reset():
 	is_possessed = false
 
 func die():
-	# Notify WorldManager
-	var wm = get_node("/root/World/WorldManager")
-	if wm:
-		wm.return_unit_to_pool(self)
+	var world = get_node_or_null("/root/World")
+	if world and world.get("world_manager"):
+		world.world_manager.return_unit_to_pool(self)
 	else:
 		queue_free()

@@ -1,8 +1,9 @@
 extends Node2D
 
-const WorldManagerScript = preload("res://scripts/WorldManager.gd")
-const PowerSystemScript = preload("res://scripts/PowerSystem.gd")
-const NetworkManagerScript = preload("res://scripts/NetworkManager.gd")
+# Use load() instead of preload() to avoid circularity errors during parse phase
+static func get_world_manager_script(): return load("res://scripts/WorldManager.gd")
+static func get_power_system_script(): return load("res://scripts/PowerSystem.gd")
+static func get_network_manager_script(): return load("res://scripts/NetworkManager.gd")
 
 var world_manager
 var power_system
@@ -16,15 +17,15 @@ var possessed_unit = null
 @onready var music_player = $MusicPlayer
 
 func _ready():
-	world_manager = WorldManagerScript.new()
+	world_manager = get_world_manager_script().new()
 	world_manager.name = "WorldManager"
 	world_manager.tile_map = tile_map
 	add_child(world_manager)
 
-	power_system = PowerSystemScript.new(world_manager)
+	power_system = get_power_system_script().new(world_manager)
 	add_child(power_system)
 
-	network_manager = NetworkManagerScript.new()
+	network_manager = get_network_manager_script().new()
 	add_child(network_manager)
 
 	if Global.is_multiplayer:

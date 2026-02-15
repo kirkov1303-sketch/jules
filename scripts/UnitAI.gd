@@ -1,10 +1,10 @@
 extends RefCounted
 
-# class_name UnitAI (Using preload to avoid circularity issues)
+# class_name UnitAI (Using load dynamically to avoid circularity issues)
 
 enum State { IDLE, WANDER, SEEK_FOOD, SEEK_SHELTER, WORK, FIGHT, REPRODUCE }
 
-var unit # Untyped to allow dynamic access to properties like is_possessed, position, etc.
+var unit
 var current_state = State.WANDER
 var target_pos = Vector2.ZERO
 var state_timer = 0.0
@@ -12,8 +12,8 @@ var state_timer = 0.0
 func _init(_unit):
 	unit = _unit
 
-func update(delta: float):
-	if unit.is_possessed:
+func update(delta):
+	if unit.get("is_possessed"):
 		handle_possession_input(delta)
 		return
 
@@ -21,7 +21,6 @@ func update(delta: float):
 
 	match current_state:
 		State.IDLE:
-			# Check for enemies or needs
 			var enemy = find_nearest_enemy()
 			if enemy:
 				current_state = State.FIGHT
@@ -45,13 +44,13 @@ func update(delta: float):
 				unit.hunger = 0
 				current_state = State.IDLE
 		State.FIGHT:
-			# Simple combat logic
 			var enemy = find_nearest_enemy()
 			if enemy:
 				target_pos = enemy.position
 				move_towards_target(delta)
 				if unit.position.distance_to(target_pos) < 20:
-					enemy.take_damage(10 * delta)
+					if enemy.has_method("take_damage"):
+						enemy.take_damage(10 * delta)
 			else:
 				current_state = State.IDLE
 		State.REPRODUCE:
@@ -60,18 +59,19 @@ func update(delta: float):
 				current_state = State.IDLE
 
 func find_food_source():
-	# For prototype, food is just some random spot or a specific biome
 	target_pos = unit.position + Vector2(randf_range(-200, 200), randf_range(-200, 200))
 
 func find_nearest_enemy():
-	var wm = unit.get_node_or_null("/root/World/WorldManager")
+	var world = unit.get_node_or_null("/root/World")
+	if not world: return null
+	var wm = world.get("world_manager")
 	if not wm: return null
 	var units_near = wm.get_units_in_range(unit.position, 200)
 	var nearest_enemy = null
 	var min_dist = INF
 	for other in units_near:
 		if other == unit: continue
-		if other.race != unit.race:
+		if other.get("race") != unit.race:
 			var d = unit.position.distance_to(other.position)
 			if d < min_dist:
 				min_dist = d
@@ -79,7 +79,9 @@ func find_nearest_enemy():
 	return nearest_enemy
 
 func spawn_offspring():
-	var wm = unit.get_node_or_null("/root/World/WorldManager")
+	var world = unit.get_node_or_null("/root/World")
+	if not world: return
+	var wm = world.get("world_manager")
 	if not wm: return
 	var offspring = wm.get_unit_from_pool()
 	offspring.position = unit.position + Vector2(randf_range(-10, 10), randf_range(-10, 10))
@@ -87,29 +89,31 @@ func spawn_offspring():
 	offspring.traits = unit.traits.duplicate()
 	if not offspring.get_parent():
 		wm.add_child(offspring)
-	wm.units.append(offspring)
+	if not wm.units.has(offspring):
+		wm.units.append(offspring)
 
-func move_towards_target(delta: float):
+func move_towards_target(delta):
 	var dir = (target_pos - unit.position).normalized()
-	unit.velocity = dir * unit.speed
-	unit.move_and_slide()
+	unit.velocity = dir * unit.get("speed", 50.0)
+	if unit.has_method("move_and_slide"):
+		unit.move_and_slide()
 
-func handle_possession_input(_delta: float):
+func handle_possession_input(_delta):
 	var move_vec = Vector2.ZERO
 	if Input.is_action_pressed("move_up"): move_vec.y -= 1
 	if Input.is_action_pressed("move_down"): move_vec.y += 1
 	if Input.is_action_pressed("move_left"): move_vec.x -= 1
 	if Input.is_action_pressed("move_right"): move_vec.x += 1
 
-	unit.velocity = move_vec.normalized() * unit.speed * 1.5
-	unit.move_and_slide()
+	unit.velocity = move_vec.normalized() * unit.get("speed", 50.0) * 1.5
+	if unit.has_method("move_and_slide"):
+		unit.move_and_slide()
 
-# Genetic traits
 func apply_genetics():
 	if unit.traits.has("strong"):
 		unit.max_health *= 1.5
 		unit.health = unit.max_health
 	if unit.traits.has("fast"):
-		unit.speed *= 1.3
+		unit.set("speed", unit.get("speed", 50.0) * 1.3)
 	if unit.traits.has("smart"):
 		unit.intelligence = 1.5

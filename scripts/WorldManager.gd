@@ -1,6 +1,6 @@
 extends Node2D
 
-# class_name WorldManager (Using preload to avoid circularity issues)
+# class_name WorldManager (Using load dynamically to avoid circularity issues)
 
 const WORLD_SIZE = 4096
 const CHUNK_SIZE = 64
@@ -21,7 +21,7 @@ var kingdoms = []
 var units = []
 var buildings = []
 var unit_pool = []
-var unit_scene = preload("res://scenes/Unit.tscn")
+var unit_scene = null
 var spatial_hash = {}
 const CELL_SIZE = 64
 
@@ -43,6 +43,7 @@ class Kingdom:
 var sim_timer = 0.0
 
 func _ready():
+	unit_scene = load("res://scenes/Unit.tscn")
 	setup_noises()
 
 func _process(delta):
@@ -62,7 +63,7 @@ func update_spatial_hash():
 			spatial_hash[cell] = []
 		spatial_hash[cell].append(unit)
 
-func get_units_in_range(pos: Vector2, radius: float) -> Array:
+func get_units_in_range(pos, radius):
 	var found_units = []
 	var min_cell = Vector2i((pos - Vector2(radius, radius)) / CELL_SIZE)
 	var max_cell = Vector2i((pos + Vector2(radius, radius)) / CELL_SIZE)
@@ -93,11 +94,9 @@ var visible_chunks = {}
 
 func generate_world():
 	if not tile_map: return
-	# Initial generation could still be slow, ideally we generate on the fly
-	# For prototype, we'll generate around a starting point
 	update_visible_chunks(Vector2(WORLD_SIZE/2, WORLD_SIZE/2))
 
-func update_visible_chunks(camera_pos: Vector2):
+func update_visible_chunks(camera_pos):
 	var center_chunk_x = int(camera_pos.x / (CHUNK_SIZE * TILE_SIZE))
 	var center_chunk_y = int(camera_pos.y / (CHUNK_SIZE * TILE_SIZE))
 
@@ -113,11 +112,6 @@ func update_visible_chunks(camera_pos: Vector2):
 			if not visible_chunks.has(chunk_key):
 				generate_chunk(x * CHUNK_SIZE, y * CHUNK_SIZE)
 
-	# Optional: clear far away chunks from TileMap to save memory if needed
-	# for key in visible_chunks:
-	#	if not new_visible_chunks.has(key):
-	#		clear_chunk(key.x * CHUNK_SIZE, key.y * CHUNK_SIZE)
-
 	visible_chunks = new_visible_chunks
 
 func generate_chunk(start_x, start_y):
@@ -129,8 +123,8 @@ func generate_chunk(start_x, start_y):
 			var temp = temperature_noise.get_noise_2d(x, y)
 			var humid = moisture_noise.get_noise_2d(x, y)
 
-			var biome = determine_biome(h, temp, humid)
-			set_tile(x, y, biome)
+			var b = determine_biome(h, temp, humid)
+			set_tile(x, y, b)
 
 func determine_biome(h, temp, humid):
 	if h < -0.3: return Biome.DEEP_OCEAN
@@ -158,24 +152,17 @@ func determine_biome(h, temp, humid):
 	if h > 0.1: return Biome.FOREST
 	return Biome.PLAINS
 
-func set_tile(x, y, biome):
+func set_tile(x, y, biome_idx):
 	if x < 0 or y < 0 or x >= WORLD_SIZE or y >= WORLD_SIZE: return
-	# TileMap setup will be in World.tscn
-	# 0 is the layer, source_id is 0, atlas_coords depends on biome
-	tile_map.set_cell(0, Vector2i(x, y), 0, Vector2i(biome, 0))
+	tile_map.set_cell(0, Vector2i(x, y), 0, Vector2i(biome_idx, 0))
 
-func get_tile_biome(pos: Vector2i) -> int:
+func get_tile_biome(pos):
 	if pos.x < 0 or pos.y < 0 or pos.x >= WORLD_SIZE or pos.y >= WORLD_SIZE: return Biome.VOID
 	var data = tile_map.get_cell_atlas_coords(0, pos)
 	return int(data.x)
 
-func start_fire(pos: Vector2i):
-	# Fire spreading logic
+func start_fire(pos):
 	set_tile(pos.x, pos.y, Biome.VOLCANO) # Placeholder for burnt land
-
-func update_chunk(x, y):
-	# Implementation for partial updates
-	pass
 
 func get_unit_from_pool():
 	if unit_pool.size() > 0:
@@ -194,15 +181,14 @@ func return_unit_to_pool(unit):
 	if units.has(unit):
 		units.erase(unit)
 
-func create_kingdom(race: String, pos: Vector2i):
+func create_kingdom(race, pos):
 	var k_name = race + " Kingdom " + str(kingdoms.size() + 1)
 	var k_color = Color(randf(), randf(), randf())
 	var kingdom = Kingdom.new(k_name, k_color, race)
 	kingdoms.append(kingdom)
 	place_building(pos, kingdom, "capital")
 
-func place_building(pos: Vector2i, kingdom: Kingdom, type: String):
-	# In a real game, this would spawn a scene
+func place_building(pos, kingdom, type):
 	var building = {
 		"pos": pos,
 		"kingdom": kingdom,
@@ -210,62 +196,29 @@ func place_building(pos: Vector2i, kingdom: Kingdom, type: String):
 		"health": 500
 	}
 	buildings.append(building)
-	# Mark tile as occupied or change visual
-	set_tile(pos.x, pos.y, Biome.MAGIC) # Use MAGIC biome as placeholder for buildings
+	set_tile(pos.x, pos.y, Biome.MAGIC)
 
 func update_diplomacy():
 	for k1 in kingdoms:
 		for k2 in kingdoms:
 			if k1 == k2: continue
-
 			if not k1.relations.has(k2.name):
 				k1.relations[k2.name] = 0
-
-			# Random shifts
 			k1.relations[k2.name] += randi_range(-5, 5)
-
-			if k1.relations[k2.name] < -50:
-				declare_war(k1, k2)
-			elif k1.relations[k2.name] > 50:
-				form_alliance(k1, k2)
-
-func declare_war(k1, k2):
-	print(k1.name, " declared war on ", k2.name)
-
-func form_alliance(k1, k2):
-	print(k1.name, " formed an alliance with ", k2.name)
 
 func perform_trade():
 	for k in kingdoms:
-		k.gold += 1 # Passive income from trade
-		if k.gold > 1000 and k.tech_level < 10:
-			k.tech_level += 1
-			k.gold -= 1000
-			print(k.name, " reached tech level ", k.tech_level)
+		k.gold += 1
 
 func simulate_erosion():
-	# Simple erosion: Mountains slowly turn to plains
 	for i in range(10):
 		var rx = randi() % WORLD_SIZE
 		var ry = randi() % WORLD_SIZE
-		var biome = get_tile_biome(Vector2i(rx, ry))
-		if biome == Biome.MOUNTAINS:
+		var b = get_tile_biome(Vector2i(rx, ry))
+		if b == Biome.MOUNTAINS:
 			set_tile(rx, ry, Biome.PLAINS)
 
 # Persistence
-func save_to_file(filepath: String):
-	var file = FileAccess.open(filepath, FileAccess.WRITE)
-	if file:
-		file.store_string(serialize_world())
-		file.close()
-
-func load_from_file(filepath: String):
-	var file = FileAccess.open(filepath, FileAccess.READ)
-	if file:
-		var content = file.get_as_text()
-		deserialize_world(content)
-		file.close()
-
 func serialize_world():
 	var k_data = []
 	for k in kingdoms:
@@ -274,7 +227,6 @@ func serialize_world():
 			"race": k.race,
 			"relations": k.relations
 		})
-
 	var u_data = []
 	for u in units:
 		u_data.append({
@@ -283,7 +235,6 @@ func serialize_world():
 			"health": u.health,
 			"traits": u.traits
 		})
-
 	var data = {
 		"seed": noise.seed,
 		"kingdoms": k_data,
@@ -296,7 +247,6 @@ func deserialize_world(json_string):
 	if data:
 		noise.seed = data.seed
 		generate_world()
-		# Logic to recreate kingdoms and units
 		for kd in data.kingdoms:
 			var k = Kingdom.new(kd.name, Color.WHITE, kd.race)
 			k.relations = kd.relations
