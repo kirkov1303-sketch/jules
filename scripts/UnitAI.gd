@@ -13,6 +13,10 @@ func _init(_unit: CharacterBody2D):
 	unit = _unit
 
 func update(delta: float):
+	if unit.is_possessed:
+		handle_possession_input(delta)
+		return
+
 	state_timer -= delta
 
 	match current_state:
@@ -88,6 +92,16 @@ func spawn_offspring():
 func move_towards_target(delta: float):
 	var dir = (target_pos - unit.position).normalized()
 	unit.velocity = dir * unit.speed
+	unit.move_and_slide()
+
+func handle_possession_input(_delta: float):
+	var move_vec = Vector2.ZERO
+	if Input.is_action_pressed("move_up"): move_vec.y -= 1
+	if Input.is_action_pressed("move_down"): move_vec.y += 1
+	if Input.is_action_pressed("move_left"): move_vec.x -= 1
+	if Input.is_action_pressed("move_right"): move_vec.x += 1
+
+	unit.velocity = move_vec.normalized() * unit.speed * 1.5
 	unit.move_and_slide()
 
 # Genetic traits

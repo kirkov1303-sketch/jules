@@ -12,6 +12,7 @@ class_name Unit
 @export var intelligence = 1.0
 
 var ai: UnitAI
+var is_possessed = false
 
 func _ready():
 	ai = UnitAI.new(self)
@@ -41,6 +42,7 @@ func reset():
 	age = 0
 	visible = true
 	process_mode = PROCESS_MODE_INHERIT
+	is_possessed = false
 
 func die():
 	# Notify WorldManager

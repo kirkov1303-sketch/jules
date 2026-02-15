@@ -4,6 +4,7 @@ var world_manager: WorldManager
 var power_system: PowerSystem
 var network_manager: NetworkManager
 var speed_scale = 1.0
+var possessed_unit: Unit = null
 
 @onready var tile_map = $TileMap
 @onready var camera = $Camera2D
@@ -41,20 +42,50 @@ func setup_ui_connections():
 	$UI/PowerPanel/Tabs/Destruction/Nuke.pressed.connect(func(): power_system.current_power = "nuke")
 
 func _process(delta):
+	handle_inputs(delta)
+	world_manager.update_visible_chunks(camera.position)
+
+func handle_inputs(delta):
 	if Input.is_action_pressed("mouse_left"):
 		power_system.use_power(get_global_mouse_position(), true)
 
+	if Input.is_action_just_pressed("pause"):
+		get_tree().paused = !get_tree().paused
+
+	if Input.is_action_just_pressed("speed_up"):
+		_on_speed_changed(clamp(speed_scale + 1.0, 1.0, 100.0))
+
+	if Input.is_action_just_pressed("speed_down"):
+		_on_speed_changed(clamp(speed_scale - 1.0, 1.0, 100.0))
+
+	if Input.is_action_just_pressed("possess"):
+		try_possess_at(get_global_mouse_position())
+
 	update_camera(delta)
-	world_manager.update_visible_chunks(camera.position)
 
 func update_camera(delta):
+	if possessed_unit:
+		camera.position = possessed_unit.position
+		return
+
 	var move_vec = Vector2.ZERO
-	if Input.is_key_pressed(KEY_W): move_vec.y -= 1
-	if Input.is_key_pressed(KEY_S): move_vec.y += 1
-	if Input.is_key_pressed(KEY_A): move_vec.x -= 1
-	if Input.is_key_pressed(KEY_D): move_vec.x += 1
+	if Input.is_action_pressed("move_up"): move_vec.y -= 1
+	if Input.is_action_pressed("move_down"): move_vec.y += 1
+	if Input.is_action_pressed("move_left"): move_vec.x -= 1
+	if Input.is_action_pressed("move_right"): move_vec.x += 1
 
 	camera.position += move_vec.normalized() * 500 * delta
+
+func try_possess_at(pos: Vector2):
+	if possessed_unit:
+		possessed_unit.is_possessed = false
+		possessed_unit = null
+		return
+
+	var units = world_manager.get_units_in_range(pos, 20)
+	if units.size() > 0:
+		possessed_unit = units[0]
+		possessed_unit.is_possessed = true
 
 func _on_speed_changed(value):
 	Engine.time_scale = value
