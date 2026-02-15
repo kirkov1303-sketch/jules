@@ -177,15 +177,16 @@ func update_chunk(x, y):
 	# Implementation for partial updates
 	pass
 
-func get_unit_from_pool() -> Unit:
+func get_unit_from_pool() -> Node:
 	if unit_pool.size() > 0:
 		var u = unit_pool.pop_back()
-		u.reset()
+		if u.has_method("reset"):
+			u.reset()
 		return u
 	else:
 		return unit_scene.instantiate()
 
-func return_unit_to_pool(unit: Unit):
+func return_unit_to_pool(unit: Node):
 	unit.visible = false
 	unit.process_mode = PROCESS_MODE_DISABLED
 	if not unit_pool.has(unit):

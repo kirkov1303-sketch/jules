@@ -9,9 +9,9 @@ var current_category = PowerCategory.CREATION
 var brush_size = 5
 var is_circle_brush = true
 
-var world_manager: WorldManager
+var world_manager: Node
 
-func _init(_world_manager: WorldManager):
+func _init(_world_manager: Node):
 	world_manager = _world_manager
 
 func use_power(pos: Vector2, is_continuous: bool = false):
@@ -31,7 +31,7 @@ func use_power(pos: Vector2, is_continuous: bool = false):
 func apply_circle_brush(center: Vector2i):
 	for x in range(center.x - brush_size, center.x + brush_size + 1):
 		for y in range(center.y - brush_size, center.y + brush_size + 1):
-			var dist = center.distance_to(Vector2i(x, y))
+			var dist = Vector2(center).distance_to(Vector2(x, y))
 			if dist <= brush_size:
 				execute_power_at(Vector2i(x, y))
 

@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 
 class_name UnitAI
 
@@ -64,7 +64,7 @@ func find_food_source():
 	target_pos = unit.position + Vector2(randf_range(-200, 200), randf_range(-200, 200))
 
 func find_nearest_enemy():
-	var wm = get_node("/root/World/WorldManager")
+	var wm = unit.get_node_or_null("/root/World/WorldManager")
 	if not wm: return null
 	var units_near = wm.get_units_in_range(unit.position, 200)
 	var nearest_enemy = null
@@ -79,7 +79,7 @@ func find_nearest_enemy():
 	return nearest_enemy
 
 func spawn_offspring():
-	var wm = get_node("/root/World/WorldManager")
+	var wm = unit.get_node_or_null("/root/World/WorldManager")
 	if not wm: return
 	var offspring = wm.get_unit_from_pool()
 	offspring.position = unit.position + Vector2(randf_range(-10, 10), randf_range(-10, 10))
