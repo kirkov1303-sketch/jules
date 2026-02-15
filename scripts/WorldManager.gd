@@ -1,6 +1,6 @@
 extends Node2D
 
-class_name WorldManager
+# class_name WorldManager (Using preload to avoid circularity issues)
 
 const WORLD_SIZE = 4096
 const CHUNK_SIZE = 64
@@ -177,7 +177,7 @@ func update_chunk(x, y):
 	# Implementation for partial updates
 	pass
 
-func get_unit_from_pool() -> Node:
+func get_unit_from_pool():
 	if unit_pool.size() > 0:
 		var u = unit_pool.pop_back()
 		if u.has_method("reset"):
@@ -186,7 +186,7 @@ func get_unit_from_pool() -> Node:
 	else:
 		return unit_scene.instantiate()
 
-func return_unit_to_pool(unit: Node):
+func return_unit_to_pool(unit):
 	unit.visible = false
 	unit.process_mode = PROCESS_MODE_DISABLED
 	if not unit_pool.has(unit):

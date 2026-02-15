@@ -1,15 +1,15 @@
 extends RefCounted
 
-class_name UnitAI
+# class_name UnitAI (Using preload to avoid circularity issues)
 
 enum State { IDLE, WANDER, SEEK_FOOD, SEEK_SHELTER, WORK, FIGHT, REPRODUCE }
 
-var unit: Node # Use Node to avoid circularity and strict property checks
+var unit # Untyped to allow dynamic access to properties like is_possessed, position, etc.
 var current_state = State.WANDER
 var target_pos = Vector2.ZERO
 var state_timer = 0.0
 
-func _init(_unit: Node):
+func _init(_unit):
 	unit = _unit
 
 func update(delta: float):

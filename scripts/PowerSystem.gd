@@ -1,6 +1,6 @@
 extends Node
 
-class_name PowerSystem
+# class_name PowerSystem (Using preload to avoid circularity issues)
 
 enum PowerCategory { CREATION, NATURE, DESTRUCTION, CREATURES, MAGIC }
 
@@ -9,11 +9,11 @@ var current_category = PowerCategory.CREATION
 var brush_size = 5
 var is_circle_brush = true
 
-var world_manager: Node
+var world_manager
 
 const WORLD_SIZE = 4096 # Local constant to avoid dependency on WorldManager class during parse
 
-func _init(_world_manager: Node):
+func _init(_world_manager):
 	world_manager = _world_manager
 
 func use_power(pos: Vector2, is_continuous: bool = false):

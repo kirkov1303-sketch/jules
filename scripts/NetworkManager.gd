@@ -1,6 +1,6 @@
 extends Node
 
-class_name NetworkManager
+# class_name NetworkManager (Using preload to avoid circularity issues)
 
 var peer = ENetMultiplayerPeer.new()
 const PORT = 7000

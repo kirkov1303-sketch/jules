@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-class_name Unit
+# class_name Unit (Using preload to avoid circularity issues)
 
 @export var race = "human"
 @export var speed = 50.0
@@ -11,11 +11,11 @@ class_name Unit
 @export var traits = []
 @export var intelligence = 1.0
 
-var ai: UnitAI
+var ai
 var is_possessed = false
 
 func _ready():
-	ai = UnitAI.new(self)
+	ai = preload("res://scripts/UnitAI.gd").new(self)
 	ai.apply_genetics()
 
 func _process(delta):

@@ -1,10 +1,14 @@
 extends Node2D
 
-var world_manager: Node
-var power_system: Node
-var network_manager: Node
+const WorldManagerScript = preload("res://scripts/WorldManager.gd")
+const PowerSystemScript = preload("res://scripts/PowerSystem.gd")
+const NetworkManagerScript = preload("res://scripts/NetworkManager.gd")
+
+var world_manager
+var power_system
+var network_manager
 var speed_scale = 1.0
-var possessed_unit: Node = null
+var possessed_unit = null
 
 @onready var tile_map = $TileMap
 @onready var camera = $Camera2D
@@ -12,15 +16,15 @@ var possessed_unit: Node = null
 @onready var music_player = $MusicPlayer
 
 func _ready():
-	world_manager = WorldManager.new()
+	world_manager = WorldManagerScript.new()
 	world_manager.name = "WorldManager"
 	world_manager.tile_map = tile_map
 	add_child(world_manager)
 
-	power_system = PowerSystem.new(world_manager)
+	power_system = PowerSystemScript.new(world_manager)
 	add_child(power_system)
 
-	network_manager = NetworkManager.new()
+	network_manager = NetworkManagerScript.new()
 	add_child(network_manager)
 
 	if Global.is_multiplayer:
